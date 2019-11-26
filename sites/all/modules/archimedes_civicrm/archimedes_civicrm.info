@@ -1,0 +1,8 @@
+name = Archimedes CiviCRM
+description = CiviCRM reporting via Archimedes.
+core = 7.x
+package = "Archimedes"
+version = 7.x-1.1
+dependencies[] = archimedes
+dependencies[] = civicrm
+

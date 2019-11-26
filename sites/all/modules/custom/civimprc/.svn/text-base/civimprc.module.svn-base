@@ -1,0 +1,249 @@
+<?php
+// $Id$
+
+/*
+*
+*Function implements CiviCRM POST hook & sets Commission value based on percentage
+*When Contribution Entered
+*
+*
+*/
+/*
+ * Implementation of CiviCRM _civicrm_post hook
+ * 
+ * http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmpost
+
+function civimprc_civicrm_post( $op, $objectName, $objectId, &$objectRef ) {
+  static $pledgeID ;
+  if ($pledgeID ==$objectId ){
+    return;
+  }
+  $pledgeID =  $objectId;
+  if ($objectName =='Pledge' && ($op == "create" || $op =="edit")){
+
+  }
+
+
+} 
+ */
+
+/*
+ * hook_civicrm_custom( $op, $groupID, $entityID, &$params )
+ */
+
+function civimprc_civicrm_custom($op, $groupID, $entityID, &$params){
+
+  if ($groupID ==4 && ($op == 'edit' || $op == 'create')){
+        //this is the pledge custom data group 4 we will set field 207 based on 57
+      static $pledgeID ;
+      if ($pledgeID == $entityID ){
+        return;
+      }
+      $pledgeID =  $entityID;
+        _civimprc_update_pledge($pledgeID);
+    
+
+
+  }
+}
+/*
+ * On contribution import create  pledge if not
+ * - recurring
+ * - in contribution types related to phone - '12', '14', '13', '19', '15', '4', '6'
+ * - contribution completed
+ */  
+function civimprc_civicrm_post($op, $objectName, $objectId, &$objectRef){
+  $excludedContributionTypes = array(4,6,10, 12,13,14,15,19);
+   if($objectName == 'Contribution' && 
+             $op == 'create' && 
+             empty($objectRef->contribution_recur_id) &&
+             $objectRef->contribution_status_id == 1 &&
+             !in_array($objectRef->contribution_type_id , $excludedContributionTypes)            
+             ){
+       if(civicrm_api('pledge_payment', 'getcount', array('version' => 3,
+       																										'options' => array('limit' => 1), 'contribution_id' => $objectId)) > 0){
+         return; // contribution already linked to a pledge
+       }
+
+      $pledgeID = _civimprc_check_existing_pledge($objectId, $objectRef->contact_id, $objectRef->receive_date, $objectRef->total_amount);
+
+      if(empty($pledgeID)){
+        $pledgeParams = array('version' =>3, 
+        											'amount' =>     $objectRef->total_amount,
+                              'contact_id' => $objectRef->contact_id,
+                              'frequency_unit' => 'Day',
+                              'frequency_interval' => 1,
+                              'installments'    => 1,
+                              'frequency_day'		=> 1,
+                              'start_date'      => $objectRef->receive_date,
+                              'create_date'     => $objectRef->receive_date,        
+                              'scheduled_date'  => $objectRef->receive_date,   
+                              'pledge_contribution_type_id'    => $objectRef->contribution_type_id,
+                            );
+        watchdog('create pledge',"<pre>".print_r($pledgeParams,true)."</pre>");
+      }
+        /*                    
+        $pledge = civicrm_api('pledge', 'create', $pledgeParams);    
+        $pledgeID = $pledge['id'];
+      } 
+      civicrm_api('pledge_payment', 'create', array('version' => 3, 
+      																							'pledge_id' => $pledgeID,
+      																							'contribution_id' => $objectId,
+                                                    'actual_amount' => $objectRef->total_amount,
+                                                    'status_id' => $objectRef->status_id ));
+   */  
+   }
+   
+}
+function civimprc_civicrm_buildForm( $formname, $form ){
+ // default state = 1018 - set for new contact form (and preferably all backend forms)
+
+  if ($form->_defaultValues['address'][1]['country_id']){
+       $defaults['address'][1]['state_province_id'] = 1018;
+       $form->setDefaults($defaults);
+
+ }
+ /*
+  * Make Cvv2 field optional as most processing done backoffice. Also, only way to enter recurring is
+  * front-end form
+  */
+ if($formname == 'CRM_Contribute_Form_Contribution_Main' || $formname == 'CRM_Contribute_Form_Contribution' ){
+   //the first form name describes for the backoffice contribution form
+   //unset cvv REQUIRED status- in all cases as we can't determine when mprc entering recurring contribution & when
+   //it is end user
+   unset($form->_required[7]);
+     unset($form->_rules['cvv2']);
+   $form->_fields['cvv2']['is_required'] = 0;
+ }
+ // set default date entered in marvin
+    $defaults['custom_113_-1'] =  date('m/d/Y');
+    $form->setDefaults($defaults);
+/*attempt to set default state on front end form but jQuery seems to be overwriting them
+       $defaults['state_province_id-5'] = 1018;
+       $defaults['state_province-5'] = 1018;
+       $defaults['state_province-1'] = 1018;
+       $defaults['billing_state_province_id-5'] = 1018;
+       $form->setDefaults($defaults);
+*/
+
+ if ($formname == 'CRM_Pledge_Form_Search'){
+   //was trying to show custom fields here but didn't manage
+ }
+
+ if ($formname == 'CRM_Pledge_Form_Pledge'){
+   if($_GET['id']){
+     $instance = $_GET['id'];
+   }else{
+     $instance ='-1';
+   }
+   $jqueryinsert = "
+   //should call the same function rather than repeat but not @ the moment
+      cj(document).ready( function() {
+      cj('#custom_57_$instance').blur(function(){
+        if(cj('#amount').attr('value') > 0){ 
+           var newValue = cj('#custom_57_$instance').attr('value') *.05 / cj('#amount').attr('value') * 100;
+           cj('#custom_207_$instance').val(newValue);
+         }
+      });
+     cj('#amount').blur(function(){
+        if(cj('#amount').attr('value') > 0){ 
+        var newValue = cj('#custom_57_$instance').attr('value') *.05 / cj('#amount').attr('value') * 100;
+         cj('#custom_207_$instance').val(newValue);
+         }
+        
+      });
+});
+";
+   drupal_add_js( $jqueryinsert , 'inline');
+
+ }
+
+$pledge_payment_id = CRM_Utils_Request::retrieve( 'ppid', 'Int' ,$form);
+ //module pre-populates contribute fields based on pledge fields
+ if ($pledge_payment_id && $formname == 'CRM_Contribute_Form_Contribution'){
+   $params['pledge_id'] = civicrm_api('pledge_payment', 'getvalue',
+     array('id' => $pledge_payment_id,
+           'version' => 3,
+           'return' => 'pledge_id'));
+        $params['version'] ='3.0';
+        $params['return.custom_185']=1;
+        $params['return.custom_186']=1;
+        $params['return.custom_187']=1;//department
+        $params['return.custom_55']=1;
+        $params['return.custom_54']=1;
+        $params['return.custom_48']=1;
+        $params['return.custom_51']=1;
+        $params['return.custom_60']=1;
+        $params['return.custom_202']=1;//campaign source
+        $params['return.custom_203']=1;//campaign method
+        $params['return.custom_207']=1;//bonus commission
+        $params['return.pledge_id']=1;
+        $params['return.pledge_payment_scheduled_amount']=1;
+        $params['return.pledge_contribution_type_id']=1;
+
+        require_once 'api/v2/Pledge.php';
+        $pledge = civicrm_pledge_get($params);
+        $defaults['custom_141_-1']= $pledge[$params['pledge_id']]['custom_202'];//campaign source code
+        $defaults['custom_142_-1']= $pledge[$params['pledge_id']]['custom_203'];//campaign method code
+        $defaults['custom_20_-1'] = $pledge[$params['pledge_id']]['custom_48'];
+        $defaults['custom_26_-1'] = $pledge[$params['pledge_id']]['custom_55'];//commission %
+        $defaults['custom_208_-1'] = $pledge[$params['pledge_id']]['custom_207'];// bonus commission %
+        $defaults['custom_21_-1'] = $pledge[$params['pledge_id']]['custom_48'];
+        $defaults['custom_184_-1'] = $pledge[$params['pledge_id']]['custom_185'];//donee organisation
+        $defaults['custom_188_-1'] = $pledge[$params['pledge_id']]['custom_187'];//department
+        $defaults['custom_50_-1'] = $pledge[$params['pledge_id']]['custom_51'];//worker
+        $defaults['custom_183_-1'] = round($pledge[$params['pledge_id']]['custom_55']*$pledge[$params['pledge_id']]['pledge_payment_scheduled_amount']/100,2);
+        if ($pledge[$params['pledge_id']]['custom_207'] > 0){
+          // if we have bonus commission we'll add it on
+          $defaults['custom_183_-1'] = $defaults['custom_183_-1'] + round($pledge[$params['pledge_id']]['custom_207']*$pledge[$params['pledge_id']]['pledge_payment_scheduled_amount']/100,2);
+        }
+        $defaults['custom_type_id'] = $params['pledge_id']['contribution_type_id'];
+        $form->setDefaults($defaults);
+
+
+    }else{
+
+    }
+
+    return;
+}
+/*
+ * Function to calculate bonus commission of 20% on the increase
+ */
+function _civimprc_update_pledge($pledgeId){
+    $result = civicrm_api('Pledge', 'Get', array('version' => 3, 'id' => $pledgeId, 'return.installments' => 1 ,'return.custom_207' => 1, 'return.custom_57' => 1,'return.contribution_type_id' => 1, 'return.installments' => 1, 'return.pledge_amount' => 1));
+    $pledgeExisting = $result['values'][$result['id']];
+    $bonusCommissionPercentofTotal = $pledgeExisting ['custom_57'] * .2 / $pledgeExisting ['pledge_amount'] * 100; 
+    if ( $pledgeExisting['custom_207'] != $bonusCommissionPercentofTotal){
+      $pledge = array('entity_id' => $result['id'],
+                     'entity_table' => 'civicrm_pledge',
+                     'custom_207' => $bonusCommissionPercentofTotal,
+                     'version' => 3);    
+      $updatePledge = civicrm_api('CustomValue', 'Create', $pledge);
+    }
+  
+}
+
+/*
+ * Check if a contribution should be linked to an existing pledge
+ */
+function _civimprc_check_existing_pledge($contribution_id, $contact_id, $receive_date, $amount){
+
+
+      $pledges = civicrm_api('Pledge', 'Get', array('version' => 3, 
+    																							'contact_id' => $contact_id, 
+    																							'sort' => 'start_date DESC', 
+    																							'rowCount' => 3));
+
+    if($pledges['count']> 0){
+      foreach ($pledges as $pledge => $pledgeDetails) {
+        if($amount == CRM_Utils_Array::value('pledge_next_pay_amount',$pledgeDetails)
+          && strtotime(CRM_Utils_Array::value('pledge_next_pay_date',$pledgeDetails)) > strtotime('-2 month', strtotime($receive_date))){
+          // a pledge exists with an expected payment of this amount within the last 2 months
+          return $pledgeDetails['id'];
+        }
+      }
+        
+   }  
+   return false;    
+}

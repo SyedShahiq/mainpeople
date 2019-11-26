@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ *
+ */
+
+/**
+ * Implements hook_archimedes_alter().
+ *
+ * Adds additional checks for Archimedes.
+ */
+function archimedes_civicrm_archimedes_alter(&$owl) {
+  module_load_include('inc', 'archimedes_civicrm');
+  if ($values = archimedes_civicrm_get_extensions()) {
+    $owl->createField('field_civicrm_extensions', $values);
+  }
+}
+
+/**
+ * Implements hook_archimedes_rows_alter().
+ */
+function archimedes_civicrm_archimedes_rows_alter(&$rows, &$owl) {
+  module_load_include('inc', 'archimedes_civicrm');
+  $civicrm_ext = $owl->getField('field_civicrm_extensions');
+  if (!empty($civicrm_ext)) {
+    $rows[] = array(t('CiviCRM Extensions'), $civicrm_ext);
+  }
+}
+
+/**
+ * Additional output for archimedes_out().
+ */
+function archimedes_civicrm_archimedes_out($owl) {
+  $header = array('CiviCRM Extensions','Version','Description');
+  $extensions = theme('table', array('header' => $header, 'rows' => $owl->getField('field_civicrm_extensions')->toArray()));
+  return $extensions;
+}

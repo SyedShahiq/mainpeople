@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<extension key="com.pogstone.contenttokens" type="module">
+  <file>contenttokens</file>
+  <name>Content Tokens</name>
+  <description>This extension provides mail merge tokens that list various content. If running under Drupal, then there are tokens for each content type, taxonomy term, and feed items. If running under WordPress then there are tokens for each post type and post term. If running under Joomla then there are tokens for each type and category. This is meant to help save time when preparing an email newsletter. If used in combination with a CMS aggregator (Such as the core Drupal aggregator module), then tokens are available for virtually any content source, local or remote. </description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>Sarah Gladstone</author>
+    <email>info@pogstone.com</email>
+  </maintainer>
+  <releaseDate>2015-05-26</releaseDate>
+  <version>3.0</version>
+  <develStage>stable</develStage>
+  <urls>
+<url>http://pogstone.com</url>
+<url>https://github.com/sgladstone/com.pogstone.contenttokens</url>
+</urls>
+  <compatibility>
+    <ver>4.4</ver>
+    <ver>4.5</ver>
+    <ver>4.6</ver>
+  </compatibility>
+  <comments>This extension checks which CMS its running under before attempting to do CMS-specific things. It has been tested primarily with Drupal 6, Drupal 7, and Joomla 3. It should work under WordPress, but testing has been limited. Its safe to install under any CMS or stand-alone. However no useful functionality is provided for CiviCRM stand-alone. (Please help improve this on GitHub at https://github.com/sgladstone/com.pogstone.contenttokens). The formatting of the results is fairly simple: each item is wrapped in a DIV tag and relative URLs are converted to absolute URLs. The original formatting from the content item is not altered. </comments>
+  <civix>
+    <namespace>CRM/Contenttokens</namespace>
+  </civix>
+<downloadUrl>https://github.com/sgladstone/com.pogstone.contenttokens/archive/3.0.zip</downloadUrl></extension>

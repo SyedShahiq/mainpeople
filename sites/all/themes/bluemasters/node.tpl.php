@@ -1,0 +1,25 @@
+<div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?>"<?php print $attributes; ?>>
+
+  <?php print $user_picture; ?>
+
+  <?php if ($display_submitted): ?>
+    <span class="submitted"><?php print $submitted ?></span>
+  <?php endif; ?>
+
+  <div class="content clearfix"<?php print $content_attributes; ?>>
+    <?php
+      hide($content['comments']);
+      hide($content['links']);
+      print render($content);
+    ?>
+  </div>
+
+  <div class="clearfix">
+    <?php if (!empty($content['links'])): ?>
+      <div class="links"><?php print render($content['links']); ?></div>
+    <?php endif; ?>
+
+    <?php print render($content['comments']); ?>
+  </div>
+
+</div>

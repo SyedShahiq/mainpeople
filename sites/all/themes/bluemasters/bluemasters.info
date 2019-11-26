@@ -1,0 +1,28 @@
+name = Blue Masters
+description = Theme based on Blue Masters PSD template
+version = VERSION
+core = 7.x
+engine = phptemplate
+
+regions[header] = Header
+regions[content] = Content
+regions[sidebar_first] = Sidebar First
+regions[search_area] = Search area
+regions[banner] = Banner
+regions[front_right] = Front Right
+regions[front_right_2] = Front Right 2
+regions[home_area_1] = Home area 1
+regions[home_area_2] = Home area 2
+regions[home_area_3] = Home area 3
+regions[home_area_3_b] = Home area 3 b
+regions[footer_left_1] = Footer left 1
+regions[footer_left_2] = Footer left 2
+regions[footer_center] = Footer center
+regions[footer_right] = Footer right
+regions[footer] = Footer
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+
+stylesheets[all][] = style.css
+

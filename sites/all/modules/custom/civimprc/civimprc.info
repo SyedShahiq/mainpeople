@@ -1,0 +1,5 @@
+; $Id$
+name = Fuzion Helper CiviCRM functions MPRC
+description = Functions to assist with Fuzion customisation
+package = CiviCRM
+core = 7.x

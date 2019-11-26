@@ -1,0 +1,11 @@
+; $Id$
+name = Fuzion CiviMigrate module for MPRC
+description = Functions to adjust MPRC data to represent recurring contributions in pledges (migrate used as hooks not called on IPN).
+package = AA Fuzion
+core = 7.x
+dependencies[] = civimigrate
+files[] = civimprc_migrate.recur_to_pledge.inc
+files[] = civimprc_migrate.single_to_pledge.inc
+files[] = civimprc_migrate.class.inc
+files[] = civimprc_migrate.link_recur_payment.inc
+files[] = civimprc_migrate.link_single_payment.inc

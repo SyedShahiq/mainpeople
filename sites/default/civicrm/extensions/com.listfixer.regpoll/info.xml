@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<extension key="com.listfixer.regpoll" type="module">
+	<file>regpoll</file>
+	<name>Reg for a Poll</name>
+	<description>Register for a Polling Location</description>
+	<license></license>
+	<maintainer>
+		<author>Michael Labriola</author>
+		<email>mike@mikelab.com</email>
+	</maintainer>
+	<releaseDate>2016-09-20</releaseDate>
+	<version>1.1</version>
+	<develStage>beta</develStage>
+	<compatibility>
+		<ver>4.7</ver>
+	</compatibility>
+	<civix>
+		<namespace>CRM/Regpoll</namespace>
+	</civix>
+</extension>

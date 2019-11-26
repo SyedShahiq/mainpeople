@@ -1,0 +1,85 @@
+div#poll-list table td, div#poll-block table td {
+	border: 1px solid black;
+}
+
+.extra-wide {
+	margin-top: 50px;
+}
+
+table.shift-status {
+	margin-bottom: 0px !important;
+}
+
+.shift-status td {
+	height: 2px;
+	padding: 0px 0px 0px 0px !important;
+	border: 1px solid black;
+}
+
+div.search-box {
+	background-color: white;
+	position: absolute;
+	top: 0px;
+	width: 792px;
+}
+
+.search-box table {
+	border: 1px solid black !important;
+	margin-bottom: 0px !important;
+}
+
+.search-box tr {
+	border-bottom: 1px solid black;
+	margin-bottom: 0px !important;
+}
+
+div.add-contact-box {
+	padding-top: 10px;
+	background-color: powderblue;
+	position: absolute;
+	left: 292px;
+	width: 520px;
+	display: none;
+}
+
+div.edit-schedule-box {
+	padding-top: 10px;
+	background-color: powderblue;
+	position: absolute;
+	left: 292px;
+	width: 600px;
+	display: none;
+	z-index: 999;
+}
+
+div.wizard-label {
+	display: inline-block;
+	width: 80px;
+	text-align: right;
+}
+
+.right {
+	text-align: right !importlant;
+}
+
+.status-1 {
+	padding: 2px 4px;
+	background-color: yellow;
+}
+
+.status-15 {
+	padding: 2px 4px;
+	color: white;
+	background-color: gray;
+}
+
+.status-16 {
+	padding: 2px 4px;
+	color: white;
+	background-color: green;
+}
+
+.pointer:hover {
+	cursor: pointer;
+	text-decoration: none;
+}

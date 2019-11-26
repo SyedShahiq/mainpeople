@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/SmsConversation</base>
+  <class>Contact</class>
+  <name>civicrm_sms_conversation_contact</name>
+  <comment>SMS Conversation to contact mapping</comment>
+  <add>4.7</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique SmsConversationContact ID</comment>
+    <add>4.7</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>contact_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to civicrm_contact</comment>
+    <add>4.7</add>
+  </field>
+  <foreignKey>
+    <name>contact_id</name>
+    <table>civicrm_contact</table>
+    <key>id</key>
+    <add>4.7</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>conversation_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to SmsConversation ID</comment>
+    <add>4.7</add>
+  </field>
+  <foreignKey>
+    <name>conversation_id</name>
+    <table>civicrm_sms_conversation</table>
+    <key>id</key>
+    <add>4.7</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>status_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Conversation Status ID</comment>
+    <add>4.7</add>
+    <pseudoconstant>
+      <optionGroupName>sms_conversation_status_type</optionGroupName>
+    </pseudoconstant>
+  </field>
+
+  <field>
+    <name>current_question_id</name>
+    <type>int unsigned</type>
+    <comment>FK to sms_conversation_question.id</comment>
+    <add>4.7</add>
+  </field>
+  <foreignKey>
+    <name>current_question_id</name>
+    <table>civicrm_sms_conversation_question</table>
+    <key>id</key>
+    <add>4.7</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>source_contact_id</name>
+    <type>int unsigned</type>
+    <comment>Id of contact that started the conversation</comment>
+    <add>4.7</add>
+  </field>
+  <foreignKey>
+    <name>source_contact_id</name>
+    <table>civicrm_contact</table>
+    <key>id</key>
+    <add>4.7</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>conversation_record</name>
+    <title>Record of conversation</title>
+    <type>longtext</type>
+    <comment>Record of all questions, answers</comment>
+    <html>
+      <type>Text</type>
+    </html>
+    <add>4.7</add>
+  </field>
+
+  <field>
+    <name>scheduled_date</name>
+    <type>timestamp</type>
+    <default>CURRENT_TIMESTAMP</default>
+    <required>false</required>
+    <title>SMS Conversation Scheduled Date</title>
+    <comment>Date and time this SMS Conversation was scheduled.</comment>
+    <add>4.7</add>
+    <html>
+      <type>Select Date</type>
+      <formatType>activityDateTime</formatType>
+    </html>
+  </field>
+
+</table>

@@ -1,0 +1,13 @@
+div.wizard-label {
+	display: inline-block;
+	width: 80px;
+	text-align: right;
+}
+
+div.buttons-right {
+	float: right;
+}
+
+div.start-button {
+	display: inline-block;
+}

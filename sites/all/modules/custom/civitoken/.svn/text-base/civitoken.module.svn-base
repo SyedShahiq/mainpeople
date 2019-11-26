@@ -1,0 +1,294 @@
+<?php
+
+function civitoken_civicrm_tokens( &$tokens ) {
+    $tokens['civitoken'] = array( 'civitoken.contributionTotal',  'civitoken.contributionLast','civitoken.contributionList' ,'civitoken.household','civitoken.pledgeTotal' ,'civitoken.pledgeLast' ,'civitoken.pledgeList','civitoken.spouse' ,  'civitoken.phones','civitoken.addresses','civitoken.addresshome' , 'civitoken.pledgeLastAmount');
+}
+
+function civitoken_civicrm_tokenValues( &$values, &$contactIDs, $jobID ) {
+
+    // we could be given an array of contact IDs or a string
+    require_once 'api/v2/Contact.php';
+    require_once 'api/v2/Contribute.php';
+    if (isset($contactIDs[0])){
+    $params['contact_id'] = $contactIDs[0];
+    }else{
+        $params['contact_id'] = $contactIDs['contact_id'];
+    }
+
+
+    if ( is_array( $contactIDs ) ) {
+        foreach ($contactIDs as $contactID){
+          $value =& $values[$contactID];
+          $value = get_location_details($contactID,$value);
+          $value = get_contribution_details($contactID,$value);
+          $value = get_spouse_details($contactID,$value);
+          $value = get_pledge_details($contactID,$value);
+          $value = get_household_details($contactID,$value);
+          $value = get_contribution_totals($contactID,$value);
+          $value = get_pledge_totals($contactID,$value);
+
+        }
+
+    } else {
+          $value =& $values;
+          $value = get_contribution_details($contactIDs,$value);
+    }
+
+
+
+
+
+    //  $value['civitoken.contributionTotal'] = 'total amount from above functions' ;
+    }
+
+function get_contribution_totals($cid, &$value){
+        global $db_url;
+        if ($db_url['civicrm']){
+          db_set_active('civicrm');
+        }
+     $query = "
+SELECT sum( total_amount ) as total_amount,
+       contact_id,
+       max( receive_date ) as receive_date
+FROM   civicrm_contribution
+WHERE  contact_id = ( $cid )
+AND    is_test = 0
+GROUP BY contact_id
+";
+    $dao = CRM_Core_DAO::executeQuery( $query );
+        //Switch back to the default connection when finished.
+        db_set_active('default');
+
+
+
+    while ( $dao->fetch( ) ) {
+        $value['civitoken.contributionTotal'] = $dao->total_amount;
+        $value['civitoken.contributionLast'  ] =  CRM_Utils_Date::customFormat($dao->receive_date, null,array('M','d','Y')) ;
+    }
+    return $value;
+
+}
+
+
+
+function get_contribution_details($cid, &$value){
+
+    require_once 'api/v2/Contribute.php';
+    $params['sort']       = 'receive_date DESC';
+    $params['contact_id'] = $cid;
+    $params['limit'] = 5;
+    $contributions = civicrm_contribution_search($params);
+    //get field labels
+
+    $i = 0;
+    $value['civitoken.contributionList'] = "<table><tr><th>Amount</th><th>Date</th><th>Status</th><th>Type</th><th>Worker</th><th>Promo</th><th>Dept</th><th>Staff member</th></tr>";
+
+    foreach($contributions as $contribution){
+    if ($i<5){
+      $value['civitoken.contributionList'] .= "<tr><td>$" . $contribution['total_amount'] . "</td>";
+      $value['civitoken.contributionList'] .= "<td>" . CRM_Utils_Date::customFormat($contribution['receive_date'], null,array('M','d','Y')) . "</td>";
+      $value['civitoken.contributionList'] .= "<td>" .$contribution['contribution_status_id']. "</td>";
+      $value['civitoken.contributionList'] .= "<td>" .$contribution['contribution_type']. "</td>";
+      $value['civitoken.contributionList'] .= "<td>" .$contribution['custom_50']. "</td>";
+      $value['civitoken.contributionList'] .= "<td>" .$contribution['custom_20']. "</td>";
+      $value['civitoken.contributionList'] .= "<td>" .$contribution['custom_21']. "</td></tr>";
+
+    }
+    $i++;
+    }
+        $value['civitoken.contributionList'] .= "</table>";
+
+    return $value;
+
+}
+
+function get_pledge_details($cid, &$value){
+
+    require_once 'api/api.php';
+    $params['sort']       = 'start_date DESC';
+    $params['contact_id'] = $cid;
+    $params['limit'] = 5;
+    $params['sequential'] =1;
+    $params['version'] =3;
+    $params['return.custom_187'] = 1;//department
+    $params['return.custom_185'] = 1;
+    $params['return.custom_202'] = 1;//source
+    $params['return.custom_51'] = 1;//worker
+
+    $params['return.pledge_amount'] = 1;
+    $params['return.pledge_status'] = 1;
+    $params['return.pledge_create_date'] = 1;
+    $params['return.pledge_contribution_type'] =1;
+
+    $pledges = civicrm_api('Pledge','Get',$params);
+    $value['civitoken.pledgeLastAmount'] = $pledges['values'][0]['pledge_amount'];
+
+    $i = 0;
+    $value['civitoken.pledgeList'] = "<table>";
+    $value['civitoken.pledgeList'] .="<tr><th>Amount</th><th>Start Date</th><th>Status</th><th>Organization</th><th>Dept</th><th>Source</th><th>Worker</th><th>Contribution Type</th></tr>";
+    foreach($pledges['values'] as $pledge){
+    if ($i<5){
+      $value['civitoken.pledgeList'] .= "<tr><td>$" . $pledge['pledge_amount'] . "</td>";
+      $value['civitoken.pledgeList'] .= "<td>" . CRM_Utils_Date::customFormat($pledge['pledge_create_date'], null,array('M','d','Y')) . "</td>";
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['pledge_status']. "</td>";
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['custom_185']. "</td>";
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['custom_187']. "</td>";//Department
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['custom_202']. "</td>";//source
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['custom_51']. "</td>";
+      $value['civitoken.pledgeList'] .= "<td>" .$pledge['pledge_contribution_type']. "</td>";
+      $value['civitoken.pledgeList'] .="</tr>";
+    }
+    $i++;
+    }
+        $value['civitoken.pledgeList'] .= "</table>";
+
+
+    return $value;
+
+}
+
+
+
+function get_household_details($cid, &$value){
+  require_once 'api/v2/Relationship.php';
+  require_once 'api/v2/Contact.php';
+  $params['contact_id'] = $cid;
+  $params['civicrm_relationship_type_id'] = 7;
+  // get relationships of type 'is household member' related to main contact
+  $rels =  civicrm_contact_relationship_get($params);
+
+  if (is_array($rels['result'])){
+  // for each relationship (should only be one) get household record
+  foreach ($rels['result'] as $relationship){
+    if ( $relationship['civicrm_relationship_type_id'] == 7){
+      $related['contact_id'] = $relationship['cid'] ;
+      $related = civicrm_contact_get($related);
+      $value['civitoken.household'] = "<p>".$relationship['display_name']."</p>";
+      $params['contact_id'] = $relationship['cid'];
+      $householdrels = civicrm_contact_relationship_get($params);
+      // for each household record get all members who are not main contact ID
+      foreach ($householdrels['result'] as $householdmember){
+       if ($householdmember ['cid'] != $cid){
+          $value['civitoken.household'] .= "<p>".$householdmember['display_name']."</p>";
+        }
+        }
+
+
+
+    }
+  }
+  }
+  return $value;
+}
+
+function get_spouse_details($cid, &$value){
+  require_once 'api/v2/Relationship.php';
+  require_once 'api/v2/Contact.php';
+  $params['contact_id'] = $cid;
+  $params['civicrm_relationship_type_id'] = 2;
+  // get relationships of type 'is household member' related to main contact
+  $rels =  civicrm_contact_relationship_get($params);
+
+  if (is_array($rels['result'])){
+  // for each relationship (should only be one) get household record
+  foreach ($rels['result'] as $relationship){
+    if ( $relationship['civicrm_relationship_type_id'] == 2){
+      $related['contact_id'] = $relationship['cid'] ;
+      $related = civicrm_contact_get($related);
+      $value['civitoken.spouse'] = "<p>".$relationship['display_name']."</p>";
+      $params['contact_id'] = $relationship['cid'];
+      $relatedcontacts = civicrm_contact_relationship_get($params);
+      // for each household record get all members who are not main contact ID
+      if (is_array($relatedcontacts)){
+      foreach ($relatedcontacts['result'] as $relatedcontact){
+       if ($relatedcontact ['cid'] != $cid){
+          $value['civitoken.spouse'] .= "<p>".$relatedcontact['display_name']."</p>";
+        }
+        }
+      }
+
+
+    }
+  }
+  }
+  return $value;
+}
+
+function get_pledge_totals($cid, &$value){
+
+
+
+            global $db_url;
+        if ($db_url['civicrm']){
+          db_set_active('civicrm');
+        }
+    $query = "
+ SELECT sum( amount ) AS total_amount, contact_id, max( end_date ) AS last_date
+FROM civicrm_pledge
+WHERE contact_id = ( $cid )
+AND is_test =0
+GROUP BY contact_id
+
+";
+    $dao = CRM_Core_DAO::executeQuery( $query );
+        //Switch back to the default connection when finished.
+        db_set_active('default');
+
+
+    $dao = CRM_Core_DAO::executeQuery( $query );
+    while ( $dao->fetch( ) ) {
+        $value['civitoken.pledgeTotal'] = $dao->total_amount;
+        $value['civitoken.pledgeLast'] =  CRM_Utils_Date::customFormat($dao->last_date, null,array('M','d','Y')) ;
+    }
+    return $value;
+
+
+}
+
+
+
+function get_location_details($cid, &$value){
+    require_once 'api/v2/Location.php';
+    require_once 'CRM/Utils/Address.php';
+    $locations = civicrm_location_get( array(
+                   'contact_id' => $cid,
+                   'version' => '3.0' ));
+
+
+    foreach ($locations['address'] as $address){
+      $formattedAddress =nl2br(CRM_Utils_Address::format($address));
+     if (!empty($formattedAddress)){
+
+     //I don't like calling the DAO direct but I can't see an API for it (yet) & it's better than just pure SQL
+     if(!empty($address['location_type_id'] )){
+       $locType = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_LocationType', $address['location_type_id'] , 'name', 'id'  );
+     }
+       $formattedAddress =nl2br(CRM_Utils_Address::format($address));
+          $value['civitoken.address' & strtolower($locType)] = $formattedAddress;
+
+          if($address['is_primary'] == 1){
+            $primary = "Primary Address: ";
+          }
+          $value['civitoken.addresses'] .= "<p><em>$primary$locType Address</em></p>" . $formattedAddress;
+          unset($primary);
+     }
+    }
+    foreach ($locations['phone'] as $phone){
+
+     if (!empty($phone['phone'])){
+     //I don't like calling the DAO direct but I can't see an API for it (yet) & it's better than just pure SQL
+          $locType = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_LocationType', $phone['location_type_id'] , 'name', 'id'  );
+          $value['civitoken.phone' & strtolower($locType)] = $phone['phone'];
+           if($phone['is_primary'] == 1){
+            $primary = "Primary Phone: ";
+          }
+          $value['civitoken.phones'] .= "<p><em>$primary$locType</em></p><p>" . $phone['phone'] . "</p>";
+          unset($primary);
+     }
+    }
+
+
+    return $value;
+
+
+}

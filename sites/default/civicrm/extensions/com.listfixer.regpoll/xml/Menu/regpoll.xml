@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<menu>
+  <item>
+     <path>civicrm/regpoll</path>
+     <title>Register for Polling Location</title>
+     <page_callback>CRM_Regpoll_Controller_RegPoll</page_callback>
+     <access_arguments>register for events</access_arguments>
+     <is_public>true</is_public>
+  </item>
+  <item>
+     <path>civicrm/regpollreport</path>
+     <path_arguments></path_arguments>
+     <title>Polling Location Reports</title>
+     <page_callback>CRM_Regpoll_Form_RegPollReport</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/regpollexport</path>
+     <path_arguments></path_arguments>
+     <title>Polling Location Data Export</title>
+     <page_callback>CRM_Regpoll_Page_Data::export</page_callback>
+     <access_arguments>access CiviReport</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/regpolladmin</path>
+     <path_arguments></path_arguments>
+     <title>Polling Location Administration</title>
+     <page_callback>CRM_Regpoll_Form_RegPollAdmin</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollpolllist</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::polllist</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollsearch</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::search</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollcontact</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::contact</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollschedule</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::schedule</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollgetsched</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::getsched</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+  <item>
+     <path>civicrm/ajax/regpollputsched</path>
+     <page_callback>CRM_Regpoll_Page_AJAX::putsched</page_callback>
+     <access_arguments>access CiviEvent</access_arguments>
+     <is_public>false</is_public>
+  </item>
+</menu>

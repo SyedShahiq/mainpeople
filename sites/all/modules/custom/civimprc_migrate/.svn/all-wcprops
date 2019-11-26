@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/repos/mprc/!svn/ver/585/drupal7/custom/civimprc_migrate
+END
+civimprc_migrate.class.inc
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/repos/mprc/!svn/ver/581/drupal7/custom/civimprc_migrate/civimprc_migrate.class.inc
+END
+civimprc_migrate.link_recur_payment.inc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/repos/mprc/!svn/ver/583/drupal7/custom/civimprc_migrate/civimprc_migrate.link_recur_payment.inc
+END
+civimprc_migrate.link_single_payment.inc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/repos/mprc/!svn/ver/592/drupal7/custom/civimprc_migrate/civimprc_migrate.link_single_payment.inc
+END
+civimprc_migrate.module
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/repos/mprc/!svn/ver/567/drupal7/custom/civimprc_migrate/civimprc_migrate.module
+END
+civimprc_migrate.recur_to_pledge.inc
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/repos/mprc/!svn/ver/590/drupal7/custom/civimprc_migrate/civimprc_migrate.recur_to_pledge.inc
+END
+civimprc_migrate.info
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/repos/mprc/!svn/ver/579/drupal7/custom/civimprc_migrate/civimprc_migrate.info
+END
+civimprc_migrate.single_to_pledge.inc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/repos/mprc/!svn/ver/591/drupal7/custom/civimprc_migrate/civimprc_migrate.single_to_pledge.inc
+END

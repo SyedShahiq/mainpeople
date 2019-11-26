@@ -1,0 +1,63 @@
+<?php
+
+class MprcCiviMigrateContributionSinglePayment extends MprcCiviMigrate {
+  public function __construct(array $arguments) {
+
+    // Always call the parent constructor first for basic setup
+    parent::__construct($arguments);
+
+    // Human-friendly description of your migration process
+    $this->description = t('Migrate matches pledges for Recurring contributions & puts data in right places');
+
+    // Create a map object for tracking the relationships between source rows
+    $this->map = new MigrateSQLMap($this->machineName,
+        array(
+          'id' => array(
+            'type' => 'int',
+            'length' => 10,
+            'unsigned' => TRUE,
+            'not null' => TRUE,
+            'alias'   => 'c',
+          )
+        ),
+        MigrateDestinationTerm::getKeySchema()
+      );
+
+    // We are getting data from tables in the Drupal default database - first,
+    // set up a query for this data.
+    $query = db_select($this->civiDB . 'civicrm_contribution', 'c')
+      ->fields('c', array(
+        'id', 'contribution_status_id', 'total_amount'));
+
+    $query->leftJoin($this->civiDB . 'civicrm_pledge_payment', 'pp', 'c.id = pp.contribution_id');
+    $query->distinct();
+    $query->where(
+      "receive_date > '2011-01-01'
+      AND is_test = 0
+      AND financial_type_id NOT IN('12', '14', '13', '19', '15', '4', '6')
+      AND c.contribution_status_id <> 3
+    ");
+    // Adding condition to join  was slow.
+    $query->isNull('c.contribution_recur_id');
+    // Adding condition to join  was slow.
+    $query->isNull('pp.pledge_id');
+
+    // Create a MigrateSource object, which manages retrieving the input data.
+    $this->source = new MigrateSourceSQL($query);
+    $this->dependencies = array('MprcCiviMigratePledgeSingle');
+    // Set up our destination
+    $this->destination = new MigrateDestinationCivicrmApi('pledge_payment');
+    $this->addFieldMapping('contribution_id', 'id');
+    $this->addFieldMapping('pledge_id', 'id')
+       ->sourceMigration('MprcCiviMigratePledgeSingle');
+    $this->addFieldMapping('actual_amount', 'total_amount');
+    $this->addFieldMapping('status_id', 'contribution_status_id');
+
+  }
+  /*
+   * Inwards handling on address creation
+   */
+  public function prepare(&$entity, &$row) {
+
+    }
+}

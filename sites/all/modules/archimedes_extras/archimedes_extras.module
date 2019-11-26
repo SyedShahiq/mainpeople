@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * @file
+ *
+ */
+
+/**
+ * Implements hook_archimedes_alter().
+ *
+ * Adds additional checks for Archimedes.
+ */
+function archimedes_extras_archimedes_alter(&$owl) {
+  module_load_include('inc', 'archimedes_extras');
+  // Unstaged / uncommitted modifications in Git repos.
+  if (variable_get('archimedes_extras_report_git', 0)) {
+    if ($values = archimedes_extras_git_status()) {
+      $owl->createField('field_git_status', $values);
+    }
+    else {
+      $owl->createField('field_git_status', '');
+    }
+    if ($values = archimedes_extras_git_info()) {
+      $owl->createField('field_git_remote_url', $values['remote_url']);
+      $owl->createField('field_git_branch', $values['branch']);
+      $owl->createField('field_git_commit_hash', $values['commit_hash']);
+    }
+    else {
+      $owl->createField('field_git_remote_url', '');
+      $owl->createField('field_git_branch', '');
+      $owl->createField('field_git_commit_hash', '');
+    }
+  }
+
+  if (variable_get('archimedes_extras_report_civicrm', 0)) {
+    if (module_exists('civicrm')) {
+      civicrm_initialize();
+      if (defined('CIVICRM_DSN')) {
+        $url = parse_url(CIVICRM_DSN);
+        $owl->createField('field_civicrm_db_name', trim($url['path'], '/'));
+      }
+      if ($info = archimedes_extras_civicrm_gitinfo()) {
+        $owl->createField('field_civicrm_git_commit', $info['commit_hash']);
+        $owl->createField('field_civicrm_git_branch', $info['branch']);
+      }
+
+      if ($values = archimedes_extras_civicrm_lastcron()) {
+        $owl->createField('field_civicrm_lastcron', $values);
+      }
+      else {
+        $owl->createField('field_civicrm_lastcron', '');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_archimedes_rows_alter().
+ */
+function archimedes_extras_archimedes_rows_alter(&$rows, &$owl) {
+  module_load_include('inc', 'archimedes_extras');
+  if (module_exists('civicrm')) {
+    // Get CiviCRM DB.
+    civicrm_initialize();
+    if (defined('CIVICRM_DSN')) {
+      $url = parse_url(CIVICRM_DSN);
+      $rows[] = array(t('CiviCRM DB Name'), trim($url['path'], '/'));
+    }
+    $civicrm_git_commit = (string) $owl->getField('field_civicrm_git_commit');
+    if (!empty($civicrm_git_commit)) {
+      $rows[] = array(t('CiviCRM Git Commit'), $civicrm_git_commit);
+    }
+    $civicrm_git_branch = (string) $owl->getField('field_civicrm_git_branch');
+    if (!empty($civicrm_git_branch)) {
+      $rows[] = array(t('CiviCRM Git Branch'), $civicrm_git_branch);
+    }
+    $civicrm_last_cron = (string) $owl->getField('field_civicrm_last_cron');
+    if (!empty($civicrm_last_cron)) {
+      $rows[] = array(t('CiviCRM Last Cron'), $civicrm_last_cron);
+    }
+  }
+
+  $git_remote_url = (string) $owl->getField('field_git_remote_url');
+  if (!empty($git_remote_url)) {
+    $rows[] = array(t('Git Remote URL'), $git_remote_url);
+  }
+
+  $git_branch = (string) $owl->getField('field_git_branch');
+  if (!empty($git_branch)) {
+    $rows[] = array(t('Git Branch'), $git_branch);
+  }
+
+  $git_commit_hash = (string) $owl->getField('field_git_commit_hash');
+  if (!empty($git_commit_hash)) {
+    $rows[] = array(t('Git Commit Hash'), $git_commit_hash);
+  }
+
+  $git_status = (string) $owl->getField('field_git_status');
+  if (!empty($git_status)) {
+    $rows[] = array(array('data' => t('Git Status'), 'style' => 'vertical-align: top;'), $git_status);
+  }
+}

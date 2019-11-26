@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/sms/conversation/schedule</path>
+    <page_callback>CRM_SmsConversation_Form_Schedule</page_callback>
+    <title>Start an SMS conversation</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/sms/conversations</path>
+    <page_callback>CRM_SmsConversation_Page_Conversations</page_callback>
+    <title>SMS conversations</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation</path>
+    <page_callback>CRM_SmsConversation_Page_Conversations</page_callback>
+    <title>SMS conversations</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation/view</path>
+    <page_callback>CRM_SmsConversation_Page_View</page_callback>
+    <title>SMS conversation</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation/edit</path>
+    <page_callback>CRM_SmsConversation_Form_Conversation</page_callback>
+    <title>Conversation</title>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation/confirmdelete</path>
+    <page_callback>CRM_SmsConversation_Form_ConfirmDelete</page_callback>
+    <title>Conversation</title>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation/question/edit</path>
+    <page_callback>CRM_SmsConversation_Form_Question</page_callback>
+    <title>Conversation</title>
+  </item>
+  <item>
+    <path>civicrm/sms/conversation/action/edit</path>
+    <page_callback>CRM_SmsConversation_Form_Action</page_callback>
+    <title>Conversation</title>
+  </item>
+  <item>
+    <path>civicrm/contact/view/smsconversation</path>
+    <page_callback>CRM_SmsConversation_Page_Tab</page_callback>
+    <title>Tab</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/ajax/smsconversationlist</path>
+    <page_callback>CRM_SmsConversation_Page_AJAX::getContactConversations</page_callback>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/contact/view/smsconversation/detail</path>
+    <page_callback>CRM_SmsConversation_Form_ViewConversation</page_callback>
+    <title>ViewConversation</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/civirule/form/action/smsconversation/schedule</path>
+    <page_callback>CRM_SmsConversation_CivirulesActions_Form_Schedule</page_callback>
+    <access_arguments>access CiviCRM</access_arguments>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+</menu>

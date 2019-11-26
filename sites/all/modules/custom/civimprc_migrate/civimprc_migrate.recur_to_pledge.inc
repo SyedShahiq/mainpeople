@@ -1,0 +1,150 @@
+<?php
+
+class MprcCiviMigratePledge extends MprcCiviMigrate {
+  protected $entity = 'Pledge';
+
+  public function __construct(array $arguments) {
+
+    // Always call the parent constructor first for basic setup
+    parent::__construct($arguments);
+
+    // Human-friendly description of your migration process
+    $this->description = t('Migrate creates / matches pledges for Recurring contributions & puts data in right places');
+    // Create a map object for tracking the relationships between source rows
+    $this->map = new MigrateSQLMap($this->machineName,
+        array(
+          'id' => array(
+            'type' => 'int',
+            'length' => 10,
+            'unsigned' => TRUE,
+            'not null' => TRUE,
+            'alias'   => 'cr',
+          ),
+        ),
+        MigrateDestinationTerm::getKeySchema()
+      );
+    // We are getting data from tables in the Drupal default database - first,
+    // set up a query for this data.
+    $query = db_select($this->civiDB . 'civicrm_contribution_recur', 'cr')
+                  ->fields('cr', array(
+                                'id',
+                                'contact_id',
+                                'amount',
+                                'frequency_unit',
+                                'frequency_interval',
+                                'installments',
+                                'start_date',
+                                'create_date',
+                                'modified_date',
+                                'cancel_date',
+                                'end_date',
+                                'next_sched_contribution_date'
+                                ));
+
+    $query->leftJoin($this->civiDB  . 'civicrm_contribution', 'c', 'cr.id = c.contribution_recur_id AND c.contribution_status_id = 1');
+    $query->leftJoin($this->civiDB . 'civicrm_value_contribution_data_3', 'vc', 'c.id = vc.entity_id');
+    $query->leftJoin($this->civiDB . 'civicrm_value_contribution_source', 'vs', 'c.id = vs.entity_id');
+    $query->where("start_date > '2011-08-01' AND c.financial_type_id NOT IN('12', '14', '13', '19', '15', '4', '6')");
+    // Adding condition to join  was slow.
+    $query->isNotNull('c.address_id');
+    // Adding condition to join  was slow.
+    $query->isNull('pp.pledge_id');
+
+    $query->distinct();
+    $query->leftJoin($this->civiDB . 'civicrm_pledge_payment', 'pp', 'c.id = pp.contribution_id');
+    $query->fields('vc', array('commission_26', 'department_188', 'donee_organization_184', 'donation_increase_197', 'worker_select_50'));
+    $query->fields('vs', array('campaign_source_code', 'campaign_method'));
+    $query->fields('c', array('financial_type_id'));
+    $query->fields('pp', array('pledge_id'));
+
+    // Create a MigrateSource object, which manages retrieving the input data.
+    $this->source = new MigrateSourceSQL($query);
+
+    // Set up our destination
+    $this->destination = new MigrateDestinationCivicrmApi('pledge');
+    $this->addFieldMapping('id', 'pledge_id')
+                         ->issueGroup("Implementer Issues")
+                         ->description("May not be available to map");
+
+    $this->addFieldMapping('contact_id', 'contact_id');
+    $this->addFieldMapping('pledge_financial_type_id', 'financial_type_id');
+    $this->addFieldMapping('frequency_unit', 'frequency_unit');
+    $this->addFieldMapping('frequency_interval', 'frequency_interval');
+    $this->addFieldMapping('installments', 'installments');
+    $this->addFieldMapping('start_date', 'start_date');
+    $this->addFieldMapping('end_date', 'end_date');
+    $this->addFieldMapping('pledge_create_date', 'create_date');
+    // Belt & braces.
+    $this->addFieldMapping('create_date', 'create_date');
+    $this->addFieldMapping('modified_date', 'modified_date');
+    $this->addFieldMapping('scheduled_date', 'next_sched_contribution_date');
+    $this->addFieldMapping('cancel_date', 'cancel_date');
+    $this->addFieldMapping('currency')->defaultValue('USD');
+    $this->addFieldMapping('custom_199')->defaultValue('Y');
+    $this->addFieldMapping('pledge_original_installment_amount', 'amount');
+
+    $this->addFieldMapping('custom_51', 'worker_select_50');
+    $this->addFieldMapping('custom_57', 'donation_increase_197');
+    $this->addFieldMapping('custom_55', 'commission_26');
+    $this->addFieldMapping('custom_185', 'donee_organization_184');
+    $this->addFieldMapping('custom_187', 'department_188');
+    $this->addFieldMapping('custom_198', 'id');
+    $this->addFieldMapping('custom_202', 'campaign_source_code');
+    $this->addFieldMapping('custom_203', 'campaign_method');
+  }
+  /*
+   * Inwards handling on address creation
+   */
+  public function prepare(&$entity, &$row) {
+    switch ($entity->frequency_interval) {
+      case '3':
+        $entity->installments = 12;
+        break;
+
+      case '1':
+        $entity->installments = 36;
+        break;
+
+      case '6':
+        $entity->installments = 6;
+    }
+    $entity->original_installment_amount = $entity->pledge_original_installment_amount;
+    $entity->amount = $entity->installments * $entity->original_installment_amount;
+
+    // Calculate 'Donation increased By'.
+    $prevPledges = civicrm_api('Pledge', 'Get', array(
+       'version' => 3,
+       'contact_id' => $entity->contact_id,
+       'sort' => 'start_date DESC',
+       'rowCount' => 2 ,
+       'sequential' => 1));
+
+    // If the first (newest) pledge is ours then we want the second pledge
+    // as the previous pledge to compare against.
+    if ($prevPledges['values'][0]['pledge_id'] == $entity->id) {
+      $prevPledge = $prevPledges['values'][1];
+    }
+    else {
+      // Otherwise we have only our own pledge for comparison.
+      $prevPledge = $prevPledges['values'][0];
+    }
+
+    if ($prevPledge['pledge_amount'] < $entity->amount &&   strtotime($prevPledge['pledge_create_date']) < strtotime($entity->pledge_create_date)) {
+      $entity->custom_57 = $entity->amount - $prevPledge['pledge_amount'];
+      watchdog("civimprc", "I need to add increase  for civicrm/contact/view?reset=1&cid=" . $entity->contact_id);
+
+    }
+    elseif ($prevPledge['pledge_amount'] = $entity->amount &&  strtotime($prevPledge['pledge_create_date']) < strtotime($params['pledge_create_date'])) {
+      $entity->custom_57 = 0;
+    }
+    if ($prevPledges['count'] == 1 && $prevPledges['values'][0]['pledge_id'] == $params['id']) {
+      $entity->custom_57 = 0;
+    }
+
+    foreach ($entity as $field => $value) {
+      if (is_null($value)) {
+        unset($entity->$field);
+      }
+    }
+  }
+}

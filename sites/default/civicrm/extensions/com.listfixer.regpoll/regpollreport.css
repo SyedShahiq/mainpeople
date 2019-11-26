@@ -1,0 +1,13 @@
+.extra-wide {
+	margin-top: 50px;
+}
+
+.extra-wide td {
+	border: 1px solid black;
+}
+
+thead {
+	font-weight: bold;
+}
+
+td {

@@ -1,0 +1,249 @@
+<?php
+
+/*
+* Implementation of hook_migrate_api().
+*/
+function civimigrate_migrate_api() {
+  $api = array(
+    'api' => 2,
+  );
+  return $api;
+}
+function civimigrate_menu() {
+  return array(
+    'civimigrate-mapper' => array(
+      'page callback' => 'civimigrate_callback',
+      'access arguments' => array(
+        'administer nodes'
+      ),
+      'type' => MENU_CALLBACK
+    ),
+    'civimigrate-mapper/%cmid/edit' => array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array(
+        'civimigrate_form',
+        1
+      ),
+      'type' => MENU_CALLBACK,
+      'access arguments' => array(
+        'administer nodes'
+      )
+    )
+  );
+}
+
+function cmid_load($cmid) {
+  $results = db_query("SELECT * FROM {civimigrate_mappings} WHERE cmid = :cmid", array(
+    ':cmid' => $cmid
+  ));
+  $cmid = array();
+  foreach ($results as $result) {
+    $cmid = array(
+      'cmid' => $result->cmid,
+      'source_field' => $result->source_field,
+      'destination_field' => $result->destination_field,
+      'description' => $result->description,
+      'table_name' => $result->table_name,
+      'real_name' => $result->real_name,
+      'issuegroup' => $result->issuegroup
+    );
+  }
+  return $cmid;
+}
+
+function civimigrate_callback() {
+  drupal_set_title("Civimigrate Mappings");
+  $results = db_query("SELECT * FROM {civimigrate_mappings}");
+  $table = array(
+    'header' => array(
+      'cmid',
+      'source_field',
+      'destination_field',
+      'description',
+      'real_name',
+      'table_name',
+      'issuegroup',
+      'distinct row count',
+      'sample data',
+      'Edit'
+    ),
+    'rows' => array()
+  );
+  foreach ($results as $result) {
+    $rowDetail = array(
+      $result->cmid,
+      $result->source_field,
+      $result->destination_field,
+      $result->description,
+      $result->real_name,
+      $result->table_name,
+      $result->issuegroup,
+    );
+    if (!empty($result->table_name) && !empty($result->real_name)) {
+      try {
+        $count = $rowDetail[] = db_query(
+          "SELECT COUNT(DISTINCT {$result->real_name}) FROM {{$result->table_name}}")->fetchField();
+        if ($count) {
+          $rowDetail[] = substr(implode(',', db_query(
+            "SELECT DISTINCT {$result->real_name} FROM {{$result->table_name}} WHERE {$result->real_name} IS NOT NULL LIMIT 5"
+          )->fetchAssoc()), 0, 32);
+        }
+        else {
+          $rowDetail[] = '';
+        }
+      }
+      catch (Exception $e) {
+        $rowDetail[] = '?';
+        $rowDetail[] = '?';
+      }
+    }
+    else {
+      $rowDetail[] = '';
+      $rowDetail[] = '';
+    }
+    $rowDetail[] = l('Edit', "civimigrate-mapper/{$result->cmid}/edit");
+    $table['rows'][] = $rowDetail;
+  }
+  return theme('table', $table);
+}
+
+function civimigrate_form($form, &$form_state, $cmid) {
+  drupal_set_title("Editing mapping {$cmid['cmid']}");
+  $form['source_field'] = array(
+    '#title' => 'Source Field',
+    '#type' => 'textfield',
+    '#default_value' => $cmid['source_field']
+  );
+  $form['destination_field'] = array(
+    '#title' => 'Destination Field',
+    '#type' => 'textfield',
+    '#default_value' => $cmid['destination_field']
+  );
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+    '#default_value' => $cmid['description']
+  );
+  $form['table_name'] = array(
+    '#title' => 'Table',
+    '#type' => 'textfield',
+    '#default_value' => $cmid['table_name']
+  );
+  $form['real_name'] = array(
+    '#title' => 'Real Field Name',
+    '#type' => 'textfield',
+    '#default_value' => $cmid['real_name']
+  );
+  $form['issuegroup'] = array(
+    '#title' => 'Issue Group',
+    '#type' => 'textfield',
+    '#default_value' => $cmid['issuegroup']
+  );
+  $form['cmid'] = array(
+    '#type' => 'hidden',
+    '#value' => $cmid['cmid']
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save'
+  );
+  return $form;
+}
+
+function civimigrate_form_validate($form, &$form_state) {
+  foreach ($form_state['values'] as $key => $value) {
+    $value = trim($value);
+    if (empty($value) && $value != 0) {
+      $form_state['values'][$key] = NULL;
+    }
+  }
+}
+
+function civimigrate_form_submit($form, &$form_state) {
+  $record = array(
+    'source_field' => $form_state['values']['source_field'],
+    'destination_field' => $form_state['values']['destination_field'],
+    'description' => $form_state['values']['description'],
+    'table_name' => $form_state['values']['table_name'],
+    'real_name' => $form_state['values']['real_name'],
+    'issuegroup' => $form_state['values']['issuegroup']
+  );
+  $result = db_update('civimigrate_mappings')->fields($record)->condition('cmid', $form_state['values']['cmid'])->execute();
+  drupal_set_message("$result row(s) updated.");
+  drupal_goto('civimigrate-mapper');
+}
+
+/**
+* Implements hook_entity_info().
+*/
+function civimigrate_entity_info() {
+  $entity_info['civimigrate_mapping'] = array(
+    'label' => t('CiviMigrate Mappings'),
+    'fieldable' => FALSE,
+    'entity keys' => array(
+      'id' => 'cmid'
+    ),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'base table' => 'civimigrate_mappings',
+    'uri callback' => 'civimigrate_uri',
+    'label callback' => 'entity_class_label',
+    'static cache' => TRUE,
+    'module' => 'civimigrate',
+    'access callback' => 'civimigrate_mapping_access',
+    'views controller class' => 'EntityDefaultViewsController',
+    'view modes' => array(
+      'full' => array(
+        'label' => t('CiviMigrate Mapping'),
+        'custom settings' =>  FALSE,
+      ),
+    )
+  );
+
+  return $entity_info;
+}
+
+/**
+ * @param $mapping
+ *
+ * @return array
+ */
+function civimigrate_uri($mapping){
+  return array(
+    'path' => 'civimigrate_mapping/' . $mapping->id,
+  );
+}
+
+/**
+ * Placeholder access function
+ * @return bool
+ */
+function civimigrate_mapping_access() {
+  return TRUE;
+}
+
+/**
+ * fill the mappings table - ie
+ * civimigrate_populate_mappings('records', array('migration' => 'Contacts', 'issuegroup' => 'needs mapping'));
+ *
+ * @param $table
+ * @param array $defaults
+ */
+function civimigrate_populate_mappings($table, $defaults = array()) {
+  $columns = db_query("SHOW columns from {" .  $table . "}")->fetchAllAssoc('Field');
+  $tableColumns = explode(',', strtolower(implode(',', array_keys($columns))));
+  $existingColumns = db_query("SELECT real_name FROM {civimigrate_mappings} WHERE table_name = :1", array(':1' => $table))->fetchAllAssoc('real_name');
+  $missingFields = array_diff_key(array_flip($tableColumns), $existingColumns);
+
+  foreach (array_keys($missingFields) as $missingField) {
+    $entity = entity_create('civimigrate_mapping', array_merge(
+      array(
+        //'default' => '',
+        'source_field' => $table . '_' . $missingField,
+        'real_name' => $missingField,
+        'table_name' => $table,
+      ),
+      $defaults));
+    $entity->save();
+  }
+}
