@@ -14,7 +14,27 @@ body.boxed-layout{
 	background-size:cover;
 	background-attachment:fixed;
 }
+#block-views-slider-block {
+  margin-top: -48px;
+  margin-left: -10%;
+  width: 1360px;
+}
 
+.flexslider .flex-active-slide .views-field-title {
+  margin-left: 10px;
+  font-size: 48px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+  line-height: 54px;
+  margin-top: -40%;
+  color: #fff;
+}
+.flex-direction-nav li a {
+  line-height: 0;
+  font-size: 0;
+  color: transparent; 
+}
 .csstransforms3d .container{
 	
 }
@@ -7640,8 +7660,3 @@ input.numeric-input:focus{
 	}
 	
 }
-
-
-
-
-
