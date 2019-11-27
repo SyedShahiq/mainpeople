@@ -35,6 +35,10 @@ body.boxed-layout{
   font-size: 0;
   color: transparent; 
 }
+
+#block-system-main-menu .first {
+  width: 70px;
+}
 .csstransforms3d .container{
 	
 }

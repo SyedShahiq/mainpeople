@@ -2,7 +2,8 @@
     "use strict";
 	jQuery(document).ready(function(){
         /*Review*/
-$('#header .container blockquote').text('Since 1982, a grassroots community action organization dedicated to social, racial and environmental justice');
+    $('#header .container blockquote').text('Since 1982, a grassroots community action organization dedicated to social, racial and environmental justice');
+    $('#block-system-main-menu .first a').addClass('icons icon-home active-trail');
 
         $('.c-review').click(function(){
             $('body,html').animate({scrollTop:900}, 800);
