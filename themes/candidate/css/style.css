@@ -35,6 +35,9 @@ body.boxed-layout{
   font-size: 0;
   color: transparent; 
 }
+.flexslider .flex-control-paging {
+  display: none;
+}
 
 #block-system-main-menu .first {
   width: 70px;

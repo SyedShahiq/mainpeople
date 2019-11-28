@@ -69,6 +69,42 @@
 				<?php if ($page['before_content']) : ?>
 					<?php print render($page['before_content']); ?>
 				<?php endif; ?>
+				<div class="panel-pane pane-block pane-block-3 banners-inline-wrapper pane-block banner-wrapper">
+					 <div class="pane-content">
+					 	<div class="banners-inline"><div class="banner-wrapper">
+					 		<a class="banner animate-onscroll" href="/candidate/event-created"><i class="icons icon-calendar icons-fadeout"></i><i class="icons icon-calendar icons-fadeout"></i><i class="icons icon-calendar icons-fadeout"></i>
+					 			<i class="icons icon-calendar"></i>
+					 			<h4>Find Events</h4>
+					 			<p>Lorem ipsum dolor sit amet</p>
+					 		</a>
+					 	</div><div class="banner-wrapper">
+					 		<a class="banner animate-onscroll" href="user"><i class="icons icon-check icons-fadeout"></i><i class="icons icon-check icons-fadeout"></i><i class="icons icon-check icons-fadeout"></i>
+					 			<i class="icons icon-check"></i>
+					 			<h4>Register to vote</h4>
+					 			<p>Nemo enim ipsam</p>
+					 		</a>
+					 	</div><div class="banner-wrapper">
+					 		<a class="banner animate-onscroll" href="https://themeforest.net/user/arrowhitech/portfolio"><i class="icons icon-user icons-fadeout"></i><i class="icons icon-user icons-fadeout"></i><i class="icons icon-user icons-fadeout"></i>
+					 			<i class="icons icon-user"></i>
+					 			<h4>Volunteer</h4>
+					 			<p>Pellentesque sed dolor</p>
+					 		</a>
+					 	</div><div class="banner-wrapper">
+					 		<div class="banner donate-banner animate-onscroll">
+					 			<h5>Make a <strong>quick donation</strong> here</h5>
+					 			<form method="post" action="https://www.paypal.com/uk/cgi-bin/webscr" id="sd_paypalform" name="_xclick"><input type="radio" name="sd_radio" id="donate-amount-1" class="sd_object sd_usermod sd_radio" value="5">
+					 				<input id="donate-amount-1" type="radio" name="donate-amount">
+					 				<label for="donate-amount-1">$5</label>
+					 				<input id="donate-amount-2" type="radio" name="donate-amount">
+					 				<label for="donate-amount-2">$25</label>
+					 				<input id="donate-amount-3" type="radio" name="donate-amount">
+					 				<label for="donate-amount-3">$100</label>
+					 				<input type="submit" value="Donate">
+					 			</form>
+					 		</div>
+					 	</div></div>
+					 </div>
+					</div>
 				<div class="row">
 					<div class="col-lg-9 col-md-9 col-sm-8">
 							<?php if ($tabs = render($tabs)): ?>
