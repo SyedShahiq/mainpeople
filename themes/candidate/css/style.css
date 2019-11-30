@@ -38,14 +38,33 @@ body.boxed-layout{
 .flexslider .flex-control-paging {
   display: none;
 }
-
+.messages {
+	display: none;
+}
+#block-block-51 {
+	display: inline-block;
+}
+#block-views-recent-stories-block-1 {
+	display: inline-block;
+	width: 59%;
+	margin-left: 5%;
+}
 #block-system-main-menu .first {
   width: 70px;
 }
-.csstransforms3d .container{
-	
+#block-views-recent-stories-block-1 .content .views-row .links li {
+	list-style: none;
+	margin-left: -40px;
+	margin-top: 10px;
 }
-
+#block-system-main .links li {
+	list-style: none;
+	margin-left: -40px;
+	margin-top: 10px;
+}
+.numeric-pagination {
+	margin-top: 0px !important;
+}
 img{
 	max-width:100%;
 }
