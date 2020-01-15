@@ -159,6 +159,9 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
     CRM_Utils_Hook::post(($op === 'add' ? 'create' : 'edit'), 'CustomField', $customField->id, $customField);
 
     CRM_Utils_System::flushCache();
+    // Flush caches is not aggressive about clearing the specific cache we know we want to clear
+    // so do it manually. Ideally we wouldn't need to clear others...
+    Civi::cache('metadata')->clear();
 
     return $customField;
   }
@@ -1061,14 +1064,15 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
    * @param int $entityId
    *
    * @return string
-   * @throws \Exception
+   *
+   * @throws \CRM_Core_Exception
    */
   public static function displayValue($value, $field, $entityId = NULL) {
     $field = is_array($field) ? $field['id'] : $field;
     $fieldId = is_object($field) ? $field->id : (int) str_replace('custom_', '', $field);
 
     if (!$fieldId) {
-      throw new Exception('CRM_Core_BAO_CustomField::displayValue requires a field id');
+      throw new CRM_Core_Exception('CRM_Core_BAO_CustomField::displayValue requires a field id');
     }
 
     if (!is_a($field, 'CRM_Core_BAO_CustomField')) {
@@ -1172,7 +1176,15 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
               $fileId = $value;
             }
             else {
-              $fileId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_File', $value, 'id', 'uri');
+              $fileParams = [
+                1 => [$entityId, 'Integer'],
+                2 => [$value, 'String'],
+              ];
+              $fileId = CRM_Core_DAO::singleValueQuery(
+                "SELECT cf.id
+                from civicrm_file cf
+                LEFT JOIN civicrm_entity_file cef ON cf.id = cef.file_id
+                WHERE cef.entity_id = %1 AND cf.uri = %2", $fileParams);
             }
             $url = self::getFileURL($entityId, $field['id'], $fileId);
             if ($url) {
@@ -1499,6 +1511,12 @@ SELECT id
             $value = '';
           }
         }
+      }
+    }
+
+    if ($customFields[$customFieldId]['html_type'] == 'Radio' && $customFields[$customFieldId]['data_type'] == 'String') {
+      if (empty($value) && $value !== 0) {
+        $value = 'null';
       }
     }
 

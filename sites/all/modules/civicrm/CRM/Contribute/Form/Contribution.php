@@ -301,7 +301,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
         $lineItem = CRM_Price_BAO_LineItem::getLineItems($this->_compId);
       }
       else {
-        $lineItem = CRM_Price_BAO_LineItem::getLineItems($this->_id, 'contribution', 1, TRUE, TRUE);
+        $lineItem = CRM_Price_BAO_LineItem::getLineItemsByContributionID(($this->_id));
       }
       // wtf?
       empty($lineItem) ? NULL : $this->_lineItems[] = $lineItem;

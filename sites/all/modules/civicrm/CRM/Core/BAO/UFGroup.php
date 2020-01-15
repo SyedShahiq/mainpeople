@@ -236,6 +236,11 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
 
       $fields = [];
       foreach ($ufGroups as $id => $title) {
+        $isReserved = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_UFGroup', $id, 'is_reserved');
+        $usedBy = CRM_Core_BAO_UFGroup::usedByModule($id, 'Profile');
+        if (empty($isReserved) && empty($usedBy)) {
+          continue;
+        }
         $subset = self::getFields($id, FALSE, $action,
           $visibility, $searchable,
           FALSE, $restrict,
@@ -741,8 +746,8 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
    * @return mixed
    */
   protected static function getCustomFields($ctype) {
-    static $customFieldCache = [];
-    if (!isset($customFieldCache[$ctype])) {
+    $cacheKey = 'uf_group_custom_fields_' . $ctype;
+    if (!Civi::cache('metadata')->has($cacheKey)) {
       $customFields = CRM_Core_BAO_CustomField::getFieldsForImport($ctype, FALSE, FALSE, FALSE, TRUE, TRUE);
 
       // hack to add custom data for components
@@ -752,9 +757,9 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
       }
       $addressCustomFields = CRM_Core_BAO_CustomField::getFieldsForImport('Address');
       $customFields = array_merge($customFields, $addressCustomFields);
-      $customFieldCache[$ctype] = [$customFields, $addressCustomFields];
+      Civi::cache('metadata')->set($cacheKey, [$customFields, $addressCustomFields]);
     }
-    return $customFieldCache[$ctype];
+    return Civi::cache('metadata')->get($cacheKey);
   }
 
   /**
@@ -1007,9 +1012,9 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
     $query->convertToPseudoNames($details);
     $config = CRM_Core_Config::singleton();
 
-    $locationTypes = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Address', 'location_type_id');
-    $imProviders = CRM_Core_PseudoConstant::get('CRM_Core_DAO_IM', 'provider_id');
-    $websiteTypes = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Website', 'website_type_id');
+    $locationTypes = CRM_Core_BAO_Address::buildOptions('location_type_id', 'validate');
+    $imProviders = CRM_Core_DAO_IM::buildOptions('provider_id', 'validate');
+    $websiteTypes = CRM_Core_DAO_Website::buildOptions('website_type_id', 'validate');
 
     $multipleFields = ['url'];
 
@@ -1394,12 +1399,14 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
    * @return bool
    *
    */
-  public static function usedByModule($id) {
+  public static function usedByModule($id, $moduleName = NULL) {
     //check whether this group is used by any module(check uf join records)
     $sql = "SELECT id
                  FROM civicrm_uf_join
                  WHERE civicrm_uf_join.uf_group_id=$id";
-
+    if ($moduleName) {
+      $sql .= " AND module = '{$moduleName}'";
+    }
     $dao = new CRM_Core_DAO();
     $dao->query($sql);
     if ($dao->fetch()) {
@@ -2123,11 +2130,7 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
       );
     }
     elseif ($fieldName === 'contribution_status_id') {
-      $contributionStatuses = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'label');
-      $statusName = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-      foreach (['In Progress', 'Overdue', 'Refunded'] as $suppress) {
-        unset($contributionStatuses[CRM_Utils_Array::key($suppress, $statusName)]);
-      }
+      $contributionStatuses = CRM_Contribute_BAO_Contribution_Utils::getContributionStatuses();
 
       $form->add('select', $name, $title,
         [
@@ -2308,7 +2311,7 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
   ) {
     if (!$componentId) {
       //get the contact details
-      list($contactDetails, $options) = CRM_Contact_BAO_Contact::getHierContactDetails($contactId, $fields);
+      $contactDetails = CRM_Contact_BAO_Contact::getHierContactDetails($contactId, $fields);
       $details = CRM_Utils_Array::value($contactId, $contactDetails);
       $multipleFields = ['website' => 'url'];
 
@@ -2359,45 +2362,7 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
             $defaults[$fldName] = $details['worldregion_id'];
           }
           elseif ($customFieldId = CRM_Core_BAO_CustomField::getKeyID($name)) {
-            // @todo retrieving the custom fields here seems obsolete - $field holds more data for the fields.
-            $customFields = CRM_Core_BAO_CustomField::getFields(CRM_Utils_Array::value('contact_type', $details));
-
-            // hack to add custom data for components
-            $components = ['Contribution', 'Participant', 'Membership', 'Activity'];
-            foreach ($components as $value) {
-              $customFields = CRM_Utils_Array::crmArrayMerge($customFields,
-                CRM_Core_BAO_CustomField::getFieldsForImport($value)
-              );
-            }
-
-            switch ($customFields[$customFieldId]['html_type']) {
-              case 'Multi-Select State/Province':
-              case 'Multi-Select Country':
-              case 'Multi-Select':
-                $v = explode(CRM_Core_DAO::VALUE_SEPARATOR, $details[$name]);
-                foreach ($v as $item) {
-                  if ($item) {
-                    $defaults[$fldName][$item] = $item;
-                  }
-                }
-                break;
-
-              case 'CheckBox':
-                $v = explode(CRM_Core_DAO::VALUE_SEPARATOR, $details[$name]);
-                foreach ($v as $item) {
-                  if ($item) {
-                    $defaults[$fldName][$item] = 1;
-                    // seems like we need this for QF style checkboxes in profile where its multiindexed
-                    // CRM-2969
-                    $defaults["{$fldName}[{$item}]"] = 1;
-                  }
-                }
-                break;
-
-              default:
-                $defaults[$fldName] = $details[$name];
-                break;
-            }
+            $defaults[$fldName] = self::reformatProfileDefaults($field, $details[$name]);
           }
           else {
             $defaults[$fldName] = $details[$name];
@@ -2479,8 +2444,15 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
                     elseif (substr($fieldName, 0, 14) === 'address_custom' &&
                       CRM_Utils_Array::value(substr($fieldName, 8), $value)
                     ) {
-                      $defaults[$fldName] = $value[substr($fieldName, 8)];
+                      $defaults[$fldName] = self::reformatProfileDefaults($field, $value[substr($fieldName, 8)]);
                     }
+                  }
+                }
+                else {
+                  if (substr($fieldName, 0, 14) === 'address_custom' &&
+                    CRM_Utils_Array::value(substr($fieldName, 8), $value)
+                  ) {
+                    $defaults[$fldName] = self::reformatProfileDefaults($field, $value[substr($fieldName, 8)]);
                   }
                 }
               }
@@ -3639,6 +3611,51 @@ SELECT  group_id
   public static function getFrontEndTitle(int $profileID) {
     $profile = civicrm_api3('UFGroup', 'getsingle', ['id' => $profileID, 'return' => ['title', 'frontend_title']]);
     return $profile['frontend_title'] ?? $profile['title'];
+  }
+
+  /**
+   * This function is used to format the profile default values.
+   *
+   * @param array $field
+   *   Associated array of profile fields to render.
+   * @param string $value
+   *   Value to render
+   *
+   * @return $defaults
+   *   String or array, depending on the html type
+   */
+  public static function reformatProfileDefaults($field, $value) {
+    $defaults = [];
+
+    switch ($field['html_type']) {
+      case 'Multi-Select State/Province':
+      case 'Multi-Select Country':
+      case 'Multi-Select':
+        $v = explode(CRM_Core_DAO::VALUE_SEPARATOR, trim($value));
+        foreach ($v as $item) {
+          if ($item) {
+            $defaults[$item] = $item;
+          }
+        }
+        break;
+
+      case 'CheckBox':
+        $v = explode(CRM_Core_DAO::VALUE_SEPARATOR, $value);
+        foreach ($v as $item) {
+          if ($item) {
+            $defaults[$item] = 1;
+            // seems like we need this for QF style checkboxes in profile where its multiindexed
+            // CRM-2969
+            $defaults["[{$item}]"] = 1;
+          }
+        }
+        break;
+
+      default:
+        $defaults = $value;
+        break;
+    }
+    return $defaults;
   }
 
 }

@@ -225,7 +225,8 @@ class CRM_Member_BAO_Query extends CRM_Core_BAO_Query {
         $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
         $value = $strtolower(CRM_Core_DAO::escapeString(trim($value)));
 
-        $query->_where[$grouping][] = "civicrm_membership.source $op '{$value}'";
+        $query->_where[$grouping][] = CRM_Contact_BAO_Query::buildClause("civicrm_membership.source", $op, $value);
+        list($op, $value) = CRM_Contact_BAO_Query::buildQillForFieldValue('CRM_Member_DAO_Membership', $name, $value, $op);
         $query->_qill[$grouping][] = ts('Source %2 %1', [1 => $value, 2 => $op]);
         $query->_tables['civicrm_membership'] = $query->_whereTables['civicrm_membership'] = 1;
         return;

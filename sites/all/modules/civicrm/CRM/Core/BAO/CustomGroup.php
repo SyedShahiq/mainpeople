@@ -1490,9 +1490,9 @@ ORDER BY civicrm_custom_group.weight,
 
           case 'Multi-Select':
             if (!empty($v)) {
-              $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = CRM_Core_DAO::VALUE_SEPARATOR
+              $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = is_array($v) ? CRM_Core_DAO::VALUE_SEPARATOR
                 . implode(CRM_Core_DAO::VALUE_SEPARATOR, $v)
-                . CRM_Core_DAO::VALUE_SEPARATOR;
+                . CRM_Core_DAO::VALUE_SEPARATOR : $v;
             }
             else {
               $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = NULL;

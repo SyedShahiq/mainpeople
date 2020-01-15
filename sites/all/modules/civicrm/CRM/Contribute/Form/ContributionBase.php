@@ -35,6 +35,7 @@
  * This class generates form components for processing a contribution.
  */
 class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
+  use CRM_Financial_Form_FrontEndPaymentFormTrait;
 
   /**
    * The id of the contribution page that we are processing.
@@ -286,9 +287,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
     // we do not want to display recently viewed items, so turn off
     $this->assign('displayRecent', FALSE);
-    // Contribution page values are cleared from session, so can't use normal Printer Friendly view.
-    // Use Browser Print instead.
-    $this->assign('browserPrint', TRUE);
 
     // action
     $this->_action = CRM_Utils_Request::retrieve('action', 'String', $this, FALSE, 'add');
@@ -345,6 +343,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
           $isPayLater = FALSE;
           $this->_values['is_pay_later'] = FALSE;
         }
+      }
+      if ($isPayLater) {
+        $this->setPayLaterLabel($this->_values['pay_later_text']);
       }
 
       if ($isMonetary) {
@@ -471,7 +472,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       CRM_Utils_Array::value('cancelSubscriptionUrl', $this->_values)
     );
 
-    $this->setTitle(($this->_pcpId ? $this->_pcpInfo['title'] : $this->_values['title']));
+    $title = !empty($this->_values['frontend_title']) ? $this->_values['frontend_title'] : $this->_values['title'];
+
+    $this->setTitle(($this->_pcpId ? $this->_pcpInfo['title'] : $title));
     $this->_defaults = [];
 
     $this->_amount = $this->get('amount');
@@ -574,9 +577,16 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     }
     $this->assignPaymentFields();
 
-    $this->assign('email',
-      $this->controller->exportValue('Main', "email-{$this->_bltID}")
-    );
+    if ($this->_emailExists && empty($this->_params["email-{$this->_bltID}"])) {
+      foreach ($this->_params as $key => $val) {
+        if (substr($key, 0, 6) == 'email-') {
+          $this->assign('email', $this->_params[$key]);
+        }
+      }
+    }
+    else {
+      $this->assign('email', CRM_Utils_Array::value("email-{$this->_bltID}", $this->_params));
+    }
 
     // also assign the receipt_text
     if (isset($this->_values['receipt_text'])) {

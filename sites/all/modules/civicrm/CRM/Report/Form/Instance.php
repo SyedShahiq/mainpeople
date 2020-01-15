@@ -129,11 +129,8 @@ class CRM_Report_Form_Instance {
       );
 
       // prepare user_roles to save as names not as ids
-      if (function_exists('user_roles')) {
-        $user_roles_array = user_roles();
-        foreach ($user_roles_array as $key => $value) {
-          $user_roles[$value] = $value;
-        }
+      if (method_exists($config->userSystem, 'getRoleNames')) {
+        $user_roles = $config->userSystem->getRoleNames();
         $grouprole = &$form->addElement('advmultiselect',
           'grouprole',
           ts('ACL Group/Role'),

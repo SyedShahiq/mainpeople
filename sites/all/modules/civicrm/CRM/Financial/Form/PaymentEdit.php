@@ -258,17 +258,28 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
     $contributionDAO->id = $contributionID;
     $contributionDAO->find(TRUE);
 
-    foreach (['trxn_id', 'check_number'] as $fieldName) {
-      if (!empty($params[$fieldName])) {
-        if (!empty($contributionDAO->$fieldName)) {
-          $values = explode(',', $contributionDAO->$fieldName);
-          // if submitted check_number or trxn_id value is
-          //   already present then ignore else add to $values array
-          if (!in_array($params[$fieldName], $values)) {
-            $values[] = $params[$fieldName];
-          }
-          $contributionDAO->$fieldName = implode(',', $values);
+    if (!empty($params['trxn_id'])) {
+      $financialTrxnDAO = CRM_Core_DAO::executeQuery("SELECT trxn_id
+        FROM civicrm_financial_trxn cft
+        LEFT JOIN civicrm_entity_financial_trxn ceft
+        ON ceft.financial_trxn_id = cft.id AND ceft.entity_table = 'civicrm_contribution'
+        WHERE entity_id = {$contributionID}");
+      $trxnIds = array();
+      while ($financialTrxnDAO->fetch()) {
+        $trxnIds[] = $financialTrxnDAO->trxn_id;
+      }
+      $contributionDAO->trxn_id = implode(',', $trxnIds);
+    }
+
+    if (!empty($params['check_number'])) {
+      if (!empty($contributionDAO->check_number)) {
+        $values = explode(',', $contributionDAO->check_number);
+        // if submitted check_number or trxn_id value is
+        //   already present then ignore else add to $values array
+        if (!in_array($params['check_number'], $values)) {
+          $values[] = $params['check_number'];
         }
+        $contributionDAO->check_number = implode(',', $values);
       }
     }
 

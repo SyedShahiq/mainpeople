@@ -683,4 +683,22 @@ abstract class CRM_Utils_System_DrupalBase extends CRM_Utils_System_Base {
     return FALSE;
   }
 
+  /**
+   * Get role names
+   *
+   * @return array
+   */
+  public function getRoleNames() {
+    //user_roles in Drupal 8 returns the complete role object in the value part,
+    //use user_role_names instead which returns the expected name => name key value pair.
+    if (function_exists('user_role_names')) {
+      return user_role_names();
+    }
+    $user_roles_array = user_roles();
+    foreach ($user_roles_array as $key => $value) {
+      $user_roles[$value] = $value;
+    }
+    return $user_roles;
+  }
+
 }

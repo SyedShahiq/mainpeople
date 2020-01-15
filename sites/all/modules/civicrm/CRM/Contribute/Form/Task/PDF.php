@@ -197,6 +197,12 @@ AND    {$this->_componentClause}";
             1 => [$contribution->trxn_id, 'String'],
           ]);
 
+      if (!empty($ids['membership'])) {
+        $membershipPayments = (array) CRM_Member_BAO_Membership::getMembershipContributionId($ids['membership'][0], TRUE);
+        if (in_array($contribID, $membershipPayments) && $contribID != current($membershipPayments)) {
+          $template->assign('renewal_mode', TRUE);
+        }
+      }
       // CRM_Contribute_BAO_Contribution::composeMessageArray expects mysql formatted date
       $objects['contribution']->receive_date = CRM_Utils_Date::isoToMysql($objects['contribution']->receive_date);
 

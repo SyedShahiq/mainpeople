@@ -282,7 +282,7 @@ class CRM_Admin_Form_Preferences extends CRM_Core_Form {
                 ) . CRM_Core_DAO::VALUE_SEPARATOR;
             }
             else {
-              $this->_config->$settingName = NULL;
+              $this->_config->$settingName = CRM_Core_DAO::VALUE_SEPARATOR . '' . CRM_Core_DAO::VALUE_SEPARATOR;
             }
             break;
 
