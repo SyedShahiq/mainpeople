@@ -16,8 +16,6 @@ body.boxed-layout{
 }
 #block-views-slider-block {
   margin-top: -48px;
-  margin-left: -10%;
-  width: 1360px;
 }
 
 .flexslider .flex-active-slide .views-field-title {
@@ -27,8 +25,11 @@ body.boxed-layout{
   margin: 0;
   text-align: center;
   line-height: 54px;
-  margin-top: -40%;
+  margin-top: -20%;
   color: #fff;
+}
+.flexslider .slides img {
+	height: 550px;
 }
 .flex-direction-nav li a {
   line-height: 0;

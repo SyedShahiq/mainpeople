@@ -69,6 +69,7 @@
 				<?php if ($page['before_content']) : ?>
 					<?php print render($page['before_content']); ?>
 				<?php endif; ?>
+			<div class="container">
 				<div class="panel-pane pane-block pane-block-3 banners-inline-wrapper pane-block banner-wrapper">
 					 <div class="pane-content">
 					 	<div class="banners-inline"><div class="banner-wrapper">
@@ -105,6 +106,8 @@
 					 	</div></div>
 					 </div>
 					</div>
+			</div>
+			<div class="container">
 				<div class="row">
 					<div class="col-lg-9 col-md-9 col-sm-8">
 							<?php if ($tabs = render($tabs)): ?>
@@ -239,7 +242,10 @@
 	</div>
 </section>
 
-<!--==============================Footer================================-->			
+<!--==============================Footer================================-->
+
+<div class="container">
 <?php
 	include_once("includes/footer.inc");
 ?>
+</div>
